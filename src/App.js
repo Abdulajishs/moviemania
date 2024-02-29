@@ -7,15 +7,12 @@ function App() {
   const [movies, setMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error,setError] = useState(null);
-  const [attempt,setAttempt] =useState(0);
-  const [stopAttempt,setStopAttempt] = useState(false)
 
   const fetchMoviesHandler = useCallback( async () => {
     setIsLoading(true)
     setError(null)
-    setStopAttempt(false)
     try {
-      const response = await fetch("https://swapi.dev/api/film/")
+      const response = await fetch("https://swapi.dev/api/films/")
       if(!response.ok){
         throw new Error("Something went wrong ...Retrying");
       }
@@ -33,21 +30,13 @@ function App() {
       setMovies(transformedMovies)
     } catch (error) {
       setError(error.message)
-      setAttempt(prevAttempt => prevAttempt +1)
     }
     setIsLoading(false)
   },[])
 
   useEffect( ()=>{
-    let timeout;
-    if (!stopAttempt) {
-      timeout = setTimeout(() => {
-        fetchMoviesHandler()
-        console.log("retrying");
-      }, 5000);
-    }
-    return ()=>clearTimeout(timeout)
-  },[fetchMoviesHandler,attempt,stopAttempt])
+    fetchMoviesHandler()
+  },[fetchMoviesHandler])
 
   let content = <p>Found no movies!!!</p>
 
@@ -69,7 +58,6 @@ function App() {
     <React.Fragment>
       <section>
         <button onClick={fetchMoviesHandler}>Fetch Movies</button>
-        <button onClick={()=>setStopAttempt(true)}>Cancel</button>
       </section>
       <section>
         {content}
