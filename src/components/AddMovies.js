@@ -1,42 +1,43 @@
 import { useRef } from "react";
 
-const AddMoviesForm = () => {
+import classes from "./AddMovies.module.css"
+
+const AddMovies = (props) => {
     const titleRef = useRef("");
     const openingTextRef = useRef("");
     const releaseDateRef = useRef("");
 
-    const addMoviesHandler = (event) => {
+    const submitHandler = (event) => {
         event.preventDefault();
-
         let NewMovieObj = {
             title: titleRef.current.value,
             openingText: openingTextRef.current.value,
             releaseDate: releaseDateRef.current.value
         }
-        console.log(NewMovieObj);
+        // console.log(NewMovieObj);
+        props.onAddMovie(NewMovieObj)
+
         titleRef.current.value = ""
         openingTextRef.current.value = ""
         releaseDateRef.current.value = ""
     }
     return (
-        <form onSubmit={addMoviesHandler}>
-            <div>
+        <form onSubmit={submitHandler}>
+            <div className={classes.control}>
                 <label htmlFor="title">Title</label>
                 <input type="text" id="title" ref={titleRef} />
             </div>
-            <div>
+            <div className={classes.control}>
                 <label htmlFor="texts">Opening Text  </label>
-                <input type="text" id="texts" ref={openingTextRef} />
+                <textarea rows="5" id="texts" ref={openingTextRef} ></textarea>
             </div>
-            <div>
+            <div className={classes.control}>
                 <label htmlFor="date">Release Date</label>
                 <input type="text" id="date" ref={releaseDateRef} />
             </div>
-            <div>
-                <button type="submit">Add Movie</button>
-            </div>
+            <button type="submit">Add Movie</button>
         </form>
     )
 }
 
-export default AddMoviesForm;
+export default AddMovies;

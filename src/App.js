@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import MoviesList from './components/MoviesList';
 import './App.css';
-import AddMoviesForm from './components/AddMoviesForm';
+import AddMovies from './components/AddMovies';
 
 function App() {
   const [movies, setMovies] = useState([]);
@@ -13,23 +13,25 @@ function App() {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await fetch("https://swapi.dev/api/films/")
+      const response = await fetch("https://react-http-4b164-default-rtdb.firebaseio.com/movies.json")
       if (!response.ok) {
         throw new Error("Something went wrong ...Retrying");
       }
       const data = await response.json()
-
-
-      const transformedMovies = data.results.map((moviedata) => {
-        return {
-          id: moviedata.episode_id,
-          title: moviedata.title,
-          openingText: moviedata.opening_crawl,
-          releaseDate: moviedata.release_date
-        }
-      })
-      setMovies(transformedMovies)
-    } catch (error) {
+      console.log(data);
+ 
+      const loadedMovies =[]
+      for (const key in data) {
+        loadedMovies.push({
+          id : key ,
+          title : data[key].title,
+          openingText : data[key].openingText,
+          releaseDate : data[key].releaseDate,
+        })
+      }
+      setMovies(loadedMovies)
+    } 
+    catch (error) {
       setError(error.message)
     }
     setIsLoading(false)
@@ -39,10 +41,29 @@ function App() {
     fetchMoviesHandler()
   }, [fetchMoviesHandler])
 
+  const addMovieHandler = async (movie)=>{
+    const response = await fetch("https://react-http-4b164-default-rtdb.firebaseio.com/movies.json",{
+    method : "POST",
+    body : JSON.stringify(movie),
+    headers : {
+      "Content-Type" : "application/json"
+    } })
+    const data = await response.json();
+
+    console.log(data);
+  }
+
+  const deleteMovieHandler = async (movieId)=>{
+    await fetch(`https://react-http-4b164-default-rtdb.firebaseio.com/movies/${movieId}.json`,{
+    method : "DELETE",
+  });
+  setMovies(prevMovies => prevMovies.filter(movie => movie.id !== movieId));
+}
+
   let content = <p>Found no movies!!!</p>
 
   if (movies.length > 0) {
-    content = <MoviesList movies={movies} />
+    content = <MoviesList movies={movies} onDeleteMovies={deleteMovieHandler} />
   }
 
   if (error) {
@@ -58,7 +79,7 @@ function App() {
   return (
     <React.Fragment>
       <section>
-        <AddMoviesForm />
+        <AddMovies onAddMovie ={addMovieHandler} />
       </section>
       <section>
         <button onClick={fetchMoviesHandler}>Fetch Movies</button>
