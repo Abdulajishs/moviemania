@@ -1,18 +1,27 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import MoviesList from './components/MoviesList';
 import './App.css';
 
 function App() {
   const [movies, setMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [error,setError] = useState(null);
+  const [attempt,setAttempt] =useState(0);
+  const [stopAttempt,setStopAttempt] = useState(false)
 
-  const fetchMoviesHandler = async () => {
+  const fetchMoviesHandler = useCallback( async () => {
     setIsLoading(true)
+    setError(null)
+    setStopAttempt(false)
     try {
-      const response = await fetch("https://swapi.dev/api/films/")
+      const response = await fetch("https://swapi.dev/api/film/")
+      if(!response.ok){
+        throw new Error("Something went wrong ...Retrying");
+      }
       const data = await response.json()
-
+      
+      
       const transformedMovies = data.results.map((moviedata) => {
         return {
           id: moviedata.episode_id,
@@ -22,10 +31,36 @@ function App() {
         }
       })
       setMovies(transformedMovies)
-      setIsLoading(false)
     } catch (error) {
-      console.error("Error fetching movies :", error);
+      setError(error.message)
+      setAttempt(prevAttempt => prevAttempt +1)
     }
+    setIsLoading(false)
+  },[])
+
+  useEffect( ()=>{
+    let timeout;
+    if (!stopAttempt) {
+      timeout = setTimeout(() => {
+        fetchMoviesHandler()
+        console.log("retrying");
+      }, 5000);
+    }
+    return ()=>clearTimeout(timeout)
+  },[fetchMoviesHandler,attempt,stopAttempt])
+
+  let content = <p>Found no movies!!!</p>
+
+  if (movies.length > 0) {
+    content = <MoviesList movies={movies} />
+  }
+
+  if(error){
+    content = <p>{error}</p>  
+  }
+  
+  if (isLoading) {
+    content =<p>Loading....</p>
   }
 
 
@@ -34,11 +69,10 @@ function App() {
     <React.Fragment>
       <section>
         <button onClick={fetchMoviesHandler}>Fetch Movies</button>
+        <button onClick={()=>setStopAttempt(true)}>Cancel</button>
       </section>
       <section>
-        {!isLoading && movies.length > 0 && <MoviesList movies={movies} />}
-        {!isLoading && movies.length === 0 && <p>Found no movies!!!</p>}
-        {isLoading && <h2 c>Loading...</h2>}
+        {content}
       </section>
     </React.Fragment>
   );
